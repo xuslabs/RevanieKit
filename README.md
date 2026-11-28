@@ -102,6 +102,19 @@ Revanie.configure(apiKey: "rv_pk_…", purchasesCompletedBy: .myApp)
 ```
 Revanie records every transaction and never finishes one, so your code (or another SDK) stays in charge while you compare.
 
+## Testing in Xcode
+
+You can try RevanieKit with a StoreKit configuration file before anything is set up in App Store Connect:
+
+1. In Xcode, open your `.storekit` file and choose **Editor › Save Public Certificate**.
+2. In Revanie, open the app's SDK screen and tap **Add your StoreKit certificate to test in Xcode**; pick the `.cer`.
+3. Run your app with the StoreKit configuration. Purchases reach Revanie as test (`Xcode`) transactions and unlock
+   entitlements; they never count as revenue.
+
+[`Examples/RevanieKitDemo`](Examples/RevanieKitDemo) is a small paywall on RevanieKit with a StoreKit configuration.
+Its `EndToEndTests` buy, check the entitlement and refund through StoreKit testing against a locally running Revanie
+server.
+
 ## How it works
 
 | Step | What happens |

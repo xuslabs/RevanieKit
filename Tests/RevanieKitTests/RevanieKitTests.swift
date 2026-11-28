@@ -98,6 +98,10 @@ let serverInfo = """
         Stub.handler = { _ in throw URLError(.notConnectedToInternet) }
         let offline = try await again.customerInfo(policy: .fetchCurrent)
         #expect(offline.isActive("pro"))
+        Stub.handler = { _ in (429, Data(#"{"error":"rate_limited"}"#.utf8), false) }
+        #expect(try await again.customerInfo(policy: .fetchCurrent).isActive("pro"))      // busy: still the cache
+        Stub.handler = { _ in (503, Data(), false) }
+        #expect(try await again.customerInfo(policy: .fetchCurrent).isActive("pro"))      // down: still the cache
         UserDefaults().removePersistentDomain(forName: suite)
     }
 

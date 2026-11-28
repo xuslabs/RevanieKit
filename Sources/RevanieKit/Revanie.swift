@@ -41,6 +41,15 @@ public final class Revanie: Sendable {
         configure(api: API(apiKey: apiKey), appUserID: appUserID, purchasesCompletedBy: purchasesCompletedBy, suite: "com.revanie.kit")
     }
 
+    /// For tests and local development only: talk to another Revanie server (e.g. `wrangler dev`) that signs with its
+    /// own key. Not part of the public API.
+    @_spi(Testing) @discardableResult
+    public static func configure(apiKey: String, baseURL: URL, publicKeyBase64: String, appUserID: String? = nil,
+                                 purchasesCompletedBy: PurchasesCompletedBy = .revanie) -> Revanie {
+        configure(api: API(apiKey: apiKey, base: baseURL, publicKeyBase64: publicKeyBase64), appUserID: appUserID,
+                  purchasesCompletedBy: purchasesCompletedBy, suite: "com.revanie.kit.testing")
+    }
+
     @discardableResult
     static func configure(api: API, appUserID: String?, purchasesCompletedBy: PurchasesCompletedBy, suite: String,
                           listen: Bool = true) -> Revanie {
@@ -142,8 +151,14 @@ actor Engine {
             publish(info)
             return info
         } catch {
-            // offline or Revanie unreachable: the last signed answer is still the truth we have
-            if let cached, case RevanieError.network = error { return cached }
+            // offline, Revanie busy (429) or down (5xx): the last signed answer is still the truth we have
+            if let cached {
+                switch error {
+                case RevanieError.network: return cached
+                case RevanieError.server(let status, _) where status == 429 || status >= 500: return cached
+                default: break
+                }
+            }
             throw error
         }
     }
